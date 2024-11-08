@@ -1,0 +1,81 @@
+services:
+    database:
+        build:
+            context: ./.docker/postgres
+        ports:
+            - "5432:5432"
+        volumes:
+            - database_data:/var/lib/postgresql/data:rw
+            - ./.docker/postgres/vector_extension.sql:/docker-entrypoint-initdb.d/0-vector_extension.sql
+        environment:
+            POSTGRES_DB: ${POSTGRES_DB:-app}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+            POSTGRES_USER: ${POSTGRES_USER:-root}
+        networks:
+            - app_network
+
+    mysql:
+        image: mysql:8.0
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: app_dev
+            MYSQL_ALLOW_EMPTY_ROOT_PASSWORD: 'no'
+        volumes:
+            - mysql_data:/var/lib/mysql:rw
+            - ./var/mysql:/var/www/var
+        networks:
+            - app_network
+
+    nginx:
+        build: ./.docker/nginx
+        ports:
+            - "8080:80"
+        volumes:
+            - ./public:/var/www/public:delegated
+        depends_on:
+            - php
+        networks:
+            - app_network
+
+    php:
+        user: '${USER_ID}:${GROUP_ID}'
+        build: ./.docker/php
+        volumes:
+            - .:/var/www:delegated
+        depends_on:
+            - database
+        networks:
+            - app_network
+
+    typesense:
+        image: typesense/typesense:26.0
+        restart: on-failure
+        ports:
+            - "8108:8108"
+        volumes:
+            - ./var/typesense-data:/data
+        command: '--data-dir /data --api-key=2556ac8f8e904c07970ac461f16873bf --enable-cors'
+        networks:
+            - app_network
+
+    adminer:
+        image: adminer:latest
+        depends_on:
+            - database
+            - mysql
+        environment:
+            APP_ENV: dev
+            ADMINER_DESIGN: pepa-linha
+            ADMINER_DEFAULT_SERVER: database
+        ports:
+            - "8082:8080"
+        networks:
+            - app_network
+
+networks:
+    app_network:
+
+volumes:
+    database_data:
+    mysql_data:

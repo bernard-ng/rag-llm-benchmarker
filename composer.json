@@ -4,17 +4,27 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "alexandrevega/gemini-api-client": "^1.0",
+        "doctrine/dbal": "^3.9",
+        "doctrine/doctrine-bundle": "^2.13",
+        "doctrine/doctrine-migrations-bundle": "^3.3",
+        "doctrine/orm": "^2.20.0",
+        "guzzlehttp/guzzle": "^7.9",
+        "openai-php/client": "*",
+        "partitech/doctrine-pgvector": "^0.0.7",
         "symfony/console": "7.1.*",
         "symfony/dotenv": "7.1.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.1.*",
+        "symfony/http-client": "7.1.*",
+        "symfony/monolog-bundle": "^3.10",
         "symfony/runtime": "7.1.*",
-        "symfony/yaml": "7.1.*"
-    },
-    "require-dev": {
+        "symfony/yaml": "7.1.*",
+        "theodo-group/llphant": "0.6.4",
+        "typesense/typesense-php": "^4.9"
     },
     "config": {
         "allow-plugins": {
@@ -54,6 +64,17 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
+        ],
+        "app:migrations": [
+            "bin/console doctrine:database:create --if-not-exists",
+            "bin/console doctrine:migration:migrate --no-interaction --allow-no-migration"
+        ],
+        "app:cs": [
+            "./vendor/bin/ecs check",
+            "bin/console lint:yaml config --parse-tags",
+            "bin/console lint:container",
+            "./vendor/bin/phpstan analyse --memory-limit=-1 --configuration=phpstan.dist.neon",
+            "./vendor/bin/rector --dry-run"
         ]
     },
     "conflict": {
@@ -64,5 +85,10 @@
             "allow-contrib": false,
             "require": "7.1.*"
         }
+    },
+    "require-dev": {
+        "rector/rector": "^1.2",
+        "symfony/maker-bundle": "^1.61",
+        "symplify/easy-coding-standard": "^12.3"
     }
 }

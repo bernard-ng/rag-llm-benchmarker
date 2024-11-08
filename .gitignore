@@ -8,3 +8,11 @@
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
+
+.idea/
+.vscode/
+dataset/
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
