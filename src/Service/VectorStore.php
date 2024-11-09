@@ -19,7 +19,7 @@ use LLPhant\Embeddings\VectorStores\VectorStoreBase;
  */
 final class VectorStore extends VectorStoreBase
 {
-    private readonly DoctrineVectorStore $store;
+    private readonly DoctrineVectorStore $vectorStore;
 
     /**
      * @throws \Throwable
@@ -28,7 +28,7 @@ final class VectorStore extends VectorStoreBase
         private readonly EntityManagerInterface $em
     ) {
         $this->em->getConnection()->getConfiguration()->setSQLLogger(null);
-        $this->store = new DoctrineVectorStore($this->em, entityClassName: Document::class);
+        $this->vectorStore = new DoctrineVectorStore($this->em, entityClassName: Document::class);
     }
 
     /**
@@ -38,7 +38,7 @@ final class VectorStore extends VectorStoreBase
     #[\Override]
     public function addDocument(EmbeddingsDocument $document): void
     {
-        $this->store->addDocument($document);
+        $this->vectorStore->addDocument($document);
     }
 
     /**
@@ -48,7 +48,7 @@ final class VectorStore extends VectorStoreBase
     #[\Override]
     public function addDocuments(array $documents): void
     {
-        $this->store->addDocuments($documents);
+        $this->vectorStore->addDocuments($documents);
     }
 
     /**
@@ -57,7 +57,7 @@ final class VectorStore extends VectorStoreBase
     #[\Override]
     public function similaritySearch(array $embedding, int $k = 4, array $additionalArguments = []): array
     {
-        return $this->store->similaritySearch($embedding, $k, $additionalArguments);
+        return $this->vectorStore->similaritySearch($embedding, $k, $additionalArguments);
     }
 
     public function getEntityManager(): EntityManagerInterface

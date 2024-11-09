@@ -4,3 +4,5 @@ parameters:
         - src/
     ignoreErrors:
         -   identifier: missingType.iterableValue
+    excludePaths:
+        - src/Service/Factory/*

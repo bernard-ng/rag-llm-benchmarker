@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Request\EmbeddingsRequest;
 use App\Service\EmbeddingGenerator;
 use Psr\Http\Client\ClientExceptionInterface;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,38 +22,30 @@ use Symfony\Component\Stopwatch\Stopwatch;
  */
 final class EmbeddingsController extends AbstractController
 {
-    use ConfigSelectionTrait;
-
-    /**
-     * @throws ClientExceptionInterface
-     * @throws \JsonException
-     * @throws \Exception
-     */
-    #[Route('api/embeddings', name: 'embeddings', methods: ['POST'])]
-    public function embeddings(Request $request): JsonResponse
+    #[Route('/v1/embeddings', name: 'embeddings', methods: ['POST'])]
+    public function embeddings(#[MapRequestPayload] EmbeddingsRequest $request): JsonResponse
     {
-        [$provider, $model, $context] = $this->selectModel($request);
-        $text = $request->getPayload()->getString('text');
-        if ($text === '') {
-            throw new BadRequestHttpException('text cannot be empty');
-        }
-
         $watch = new Stopwatch(true);
         $watch->start('embeddings');
 
-        $embeddingGenerator = new EmbeddingGenerator($provider);
-        $embeddings = $embeddingGenerator->embedText($text);
+        $embeddingGenerator = new EmbeddingGenerator(
+            $request->embeddingsModel->provider,
+            $request->embeddingsModel->model
+        );
+        $embeddings = $embeddingGenerator->embedText($request->text);
         $benchmark = $watch->stop('embeddings');
 
         return $this->json([
-            'provider' => $provider->value,
             'embeddings' => $embeddings,
             'created_at' => (new \DateTimeImmutable())->format('U'),
             'benchmark' => [
                 'duration' => $benchmark->getDuration(),
                 'memory' => $benchmark->getMemory(),
             ],
-            'done' => true,
+            'embeddings_model' => [
+                'provider' => $request->embeddingsModel->provider->value,
+                'model' => $request->embeddingsModel->model
+            ]
         ]);
     }
 }

@@ -22,6 +22,7 @@
         "symfony/http-client": "7.1.*",
         "symfony/monolog-bundle": "^3.10",
         "symfony/runtime": "7.1.*",
+        "symfony/validator": "7.1.*",
         "symfony/yaml": "7.1.*",
         "theodo-group/llphant": "0.6.4",
         "typesense/typesense-php": "^4.9"

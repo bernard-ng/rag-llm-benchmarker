@@ -2,26 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Factory;
 
 use App\Service\Google\GoogleConfig;
+use App\Service\Provider;
 use LLPhant\OllamaConfig;
 use LLPhant\OpenAIConfig;
 
 /**
- * Class Config.
+ * Class ConfigFactory.
  *
  * @author bernard-ng <bernard@devscast.tech>
  */
-abstract readonly class Config
+abstract readonly class ConfigFactory
 {
-    public static function get(Provider $service, ?Model $model = null): OpenAIConfig|OllamaConfig|GoogleConfig|null
+    public static function create(Provider $service, ?string $model = null): OpenAIConfig|OllamaConfig|GoogleConfig
     {
         switch ($service) {
             case Provider::OPENAI:
                 $openai = new OpenAIConfig();
                 $openai->apiKey = $_ENV['OPENAI_API_KEY'];
-                $openai->model = $model ? $model->value : Model::GPT35_TURBO->value;
+                $openai->model = $model ?? 'gpt-4-turbo';
                 return $openai;
             case Provider::MISTRAL:
                 $mistral = new OpenAIConfig();
@@ -29,16 +30,14 @@ abstract readonly class Config
                 return $mistral;
             case Provider::OLLAMA:
                 $ollama = new OllamaConfig();
-                $ollama->model = $model ? $model->value : Model::MISTRAL_7B->value;
+                $ollama->model = $model ?? 'mistral';
                 $ollama->url = $_ENV['OLLAMA_SERVER_URL'] ?? 'http://localhost:11434/api/';
                 return $ollama;
             case Provider::GOOGLE:
                 $google = new GoogleConfig();
                 $google->apiKey = $_ENV['GEMINI_API_KEY'];
-                $google->model = $model ? $model->value : Model::GEMINI_PRO->value;
+                $google->model = $model ?? 'gemini-1.5-pro';
                 return $google;
-            default:
-                throw new \InvalidArgumentException('invalid or unsupported provider');
         }
     }
 }

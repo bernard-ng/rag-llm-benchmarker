@@ -4,17 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Service\Google\GoogleConfig;
-use App\Service\Google\GoogleEmbeddingGenerator;
+use App\Service\Factory\ConfigFactory;
+use App\Service\Factory\EmbeddingGeneratorFactory;
 use LLPhant\Embeddings\Document;
 use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
-use LLPhant\Embeddings\EmbeddingGenerator\Mistral\MistralEmbeddingGenerator;
-use LLPhant\Embeddings\EmbeddingGenerator\Ollama\OllamaEmbeddingGenerator;
-use LLPhant\Embeddings\EmbeddingGenerator\OpenAI\OpenAI3SmallEmbeddingGenerator;
-use LLPhant\OllamaConfig;
-use LLPhant\OpenAIConfig;
-use Psr\Http\Client\ClientExceptionInterface;
-use Symfony\Component\Filesystem\Exception\InvalidArgumentException;
 
 /**
  * Class EmbeddingGenerator.
@@ -28,54 +21,26 @@ final readonly class EmbeddingGenerator implements EmbeddingGeneratorInterface
     /**
      * @throws \Exception
      */
-    public function __construct(Provider $provider = Provider::MISTRAL)
-    {
-        $config = Config::get($provider);
-
-        switch ($provider) {
-            case Provider::MISTRAL:
-                /** @var OpenAIConfig|null $config */
-                $this->embeddingGenerator = new MistralEmbeddingGenerator($config);
-                break;
-            case Provider::OLLAMA:
-                /** @var OllamaConfig $config */
-                $this->embeddingGenerator = new OllamaEmbeddingGenerator($config);
-                break;
-            case Provider::OPENAI:
-                /** @var OpenAIConfig|null $config */
-                $this->embeddingGenerator = new OpenAI3SmallEmbeddingGenerator($config);
-                break;
-            case Provider::GOOGLE:
-                /** @var GoogleConfig $config */
-                $this->embeddingGenerator = new GoogleEmbeddingGenerator($config);
-                break;
-            default:
-                throw new InvalidArgumentException('invalid provider or model');
-        }
+    public function __construct(
+        Provider $provider = Provider::MISTRAL,
+        string $model = 'mistral-embed'
+    ) {
+        $config = ConfigFactory::create($provider, $model);
+        $this->embeddingGenerator = EmbeddingGeneratorFactory::create($provider, $config);
     }
 
-    /**
-     * @throws \JsonException
-     * @throws ClientExceptionInterface
-     */
     #[\Override]
     public function embedText(string $text): array
     {
         return $this->embeddingGenerator->embedText($text);
     }
 
-    /**
-     * @throws ClientExceptionInterface
-     */
     #[\Override]
     public function embedDocument(Document $document): Document
     {
         return $this->embeddingGenerator->embedDocument($document);
     }
 
-    /**
-     * @throws ClientExceptionInterface
-     */
     #[\Override]
     public function embedDocuments(array $documents): array
     {

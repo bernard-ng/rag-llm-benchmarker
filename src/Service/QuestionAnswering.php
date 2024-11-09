@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Repository\CitationIndexRepository;
 use LLPhant\Chat\ChatInterface;
+use LLPhant\Embeddings\EmbeddingGenerator\EmbeddingGeneratorInterface;
+use LLPhant\Embeddings\VectorStores\VectorStoreBase;
 use LLPhant\Query\SemanticSearch\QuestionAnswering as LLPhantQuestionAnswering;
-use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -15,34 +15,26 @@ use Psr\Log\LoggerInterface;
  *
  * @author bernard-ng <bernard@devscast.tech>
  */
-#[WithMonologChannel('app')]
 final class QuestionAnswering extends LLPhantQuestionAnswering
 {
     /**
      * @throws \Exception
      */
     public function __construct(
-        VectorStore $vectorStoreBase,
-        EmbeddingGenerator $embeddingGenerator,
+        VectorStoreBase $vectorStoreBase,
+        EmbeddingGeneratorInterface $embeddingGenerator,
         ChatInterface $chat,
         public readonly LoggerInterface $logger,
-        public readonly CitationIndexRepository $citationIndexRepository,
         private array $retrievedDocuments = []
     ) {
         parent::__construct($vectorStoreBase, $embeddingGenerator, $chat);
     }
 
-    /**
-     * @return array{prompt: string, sources: string}
-     */
-    public function retrieveRelatedDocuments(string $question, int $k, array $additionalArguments): array
+    public function retrieveRelatedDocuments(string $question, int $k, array $additionalArguments): string
     {
-        $useKnowledgeBase = $additionalArguments['useKnowledgeBase'] ?? true;
-        if ($useKnowledgeBase === false) {
-            return [
-                'prompt' => SystemPrompt::format(useKnowledgeBase: false),
-                'sources' => '',
-            ];
+        $useContext = $additionalArguments['useContext'] ?? true;
+        if ($useContext === false) {
+            return SystemPrompt::format(useContext: false);
         }
 
         $this->retrievedDocuments = $this->similaritySearch($question, $k, $additionalArguments);
@@ -51,35 +43,24 @@ final class QuestionAnswering extends LLPhantQuestionAnswering
                 'question' => $question,
             ]);
 
-            return [
-                'prompt' => SystemPrompt::format(),
-                'sources' => "\nAucune source trouvée relative à la question",
-            ];
+            return SystemPrompt::format();
         }
 
         $context = $this->getAugmentedContext($this->retrievedDocuments);
-        $sources = $this->getCitationSources($this->retrievedDocuments);
         $this->logger->debug('[LLM] augmented context', [
             'question' => $question,
             'documents' => $this->retrievedDocuments,
             'context' => $context,
-            'sources' => $sources,
         ]);
 
-        return [
-            'prompt' => SystemPrompt::format($context),
-            'sources' => empty($sources) ? '' : "\nSources consultées : \n{$sources}",
-        ];
+        return SystemPrompt::format($context);
     }
 
-    public function generateAnswer(string $question, array $context): string
+    public function generateAnswer(string $question, string $context): string
     {
-        $this->chat->setSystemMessage($context['prompt']);
+        $this->chat->setSystemMessage($context);
 
-        $response = $this->chat->generateText($question);
-        $response .= $context['sources'];
-
-        return $response;
+        return $this->chat->generateText($question);
     }
 
     private function getAugmentedContext(array $retrievedDocuments): string
@@ -90,34 +71,6 @@ final class QuestionAnswering extends LLPhantQuestionAnswering
         }
 
         return $context;
-    }
-
-    private function getCitationSources(array $retrievedDocuments): string
-    {
-        $sources = '';
-        foreach ($this->retrievedDocuments as $document) {
-            $id = preg_replace('/(-?\d+)?(.txt|.pdf)/', '', $document->sourceName);
-            $ids = [];
-
-            try {
-                $results = $this->citationIndexRepository->find($id);
-                if ($results['found'] > 0) {
-                    $source = $results['hits'][0]['document'];
-
-                    if (! in_array($id, $ids)) {
-                        $title = str_replace('content/Drive/MyDrive/DATA/PDF', '', $source['title']);
-                        $sources .= "- {$title}\n";
-                        $this->logger->debug('[CitationIndex] source found', [
-                            'hash' => $source['hash'],
-                        ]);
-                    }
-                }
-            } catch (\Throwable $e) {
-                $this->logger->error($e->getMessage(), $e->getTrace());
-            }
-        }
-
-        return $sources;
     }
 
     private function similaritySearch(string $question, int $k, array $additionalArguments): array

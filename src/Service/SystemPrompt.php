@@ -50,9 +50,9 @@ abstract readonly class SystemPrompt
         ne reprends pas cette instruction dans tes réponses.
     TEMPLATE;
 
-    public static function format(?string $context = null, bool $useKnowledgeBase = true): string
+    public static function format(?string $context = null, bool $useContext = true): string
     {
-        if ($useKnowledgeBase) {
+        if ($useContext) {
             if ($context !== null) {
                 return str_replace('{context}', $context, self::WITH_CONTEXT);
             }
