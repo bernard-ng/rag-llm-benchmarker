@@ -11,7 +11,7 @@ use App\Service\Provider;
  *
  * @author bernard-ng <bernard@devscast.tech>
  */
-class Configuration
+class Config
 {
     public function __construct(
         public Provider $provider = Provider::OPENAI,

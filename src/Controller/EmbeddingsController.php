@@ -6,12 +6,9 @@ namespace App\Controller;
 
 use App\Request\EmbeddingsRequest;
 use App\Service\EmbeddingGenerator;
-use Psr\Http\Client\ClientExceptionInterface;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Stopwatch\Stopwatch;
 
@@ -23,8 +20,10 @@ use Symfony\Component\Stopwatch\Stopwatch;
 final class EmbeddingsController extends AbstractController
 {
     #[Route('/v1/embeddings', name: 'embeddings', methods: ['POST'])]
-    public function embeddings(#[MapRequestPayload] EmbeddingsRequest $request): JsonResponse
-    {
+    public function embeddings(
+        #[MapRequestPayload(acceptFormat: 'json')]
+        EmbeddingsRequest $request
+    ): JsonResponse {
         $watch = new Stopwatch(true);
         $watch->start('embeddings');
 
@@ -37,15 +36,15 @@ final class EmbeddingsController extends AbstractController
 
         return $this->json([
             'embeddings' => $embeddings,
-            'created_at' => (new \DateTimeImmutable())->format('U'),
+            'createdAt' => (new \DateTimeImmutable())->format('U'),
             'benchmark' => [
                 'duration' => $benchmark->getDuration(),
                 'memory' => $benchmark->getMemory(),
             ],
-            'embeddings_model' => [
+            'embeddingsModel' => [
                 'provider' => $request->embeddingsModel->provider->value,
-                'model' => $request->embeddingsModel->model
-            ]
+                'model' => $request->embeddingsModel->model,
+            ],
         ]);
     }
 }

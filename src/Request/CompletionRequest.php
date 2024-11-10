@@ -16,8 +16,8 @@ final class CompletionRequest
     public function __construct(
         #[Assert\NotBlank]
         public string $prompt,
-        public Configuration $generativeModel,
-        public Configuration $embeddingsModel,
+        public Config $generativeModel,
+        public Config $embeddingsModel,
         public bool $useContext = false,
     ) {
     }

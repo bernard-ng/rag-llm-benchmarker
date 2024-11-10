@@ -16,7 +16,8 @@ final class EmbeddingsRequest
     public function __construct(
         #[Assert\NotBlank]
         public string $text,
-        public Configuration $embeddingsModel,
+        public Config $embeddingsModel,
+        public ?int $dimension = null,
     ) {
     }
 }

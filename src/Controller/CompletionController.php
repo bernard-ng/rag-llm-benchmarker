@@ -8,9 +8,9 @@ use App\Request\CompletionRequest;
 use App\Service\Factory\QuestionAnsweringFactory;
 use App\Service\VectorStore;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Stopwatch\Stopwatch;
 
@@ -30,8 +30,10 @@ class CompletionController extends AbstractController
     #[Route('/v1/generate', name: 'generate', methods: ['POST'])]
     #[Route('/v1/chats/completion', name: 'completion', methods: ['POST'])]
     #[Route('/v1/completion', name: 'completion_legacy', methods: ['POST'])]
-    public function completion(#[MapRequestPayload] CompletionRequest $request): JsonResponse
-    {
+    public function completion(
+        #[MapRequestPayload(acceptFormat: 'json')]
+        CompletionRequest $request
+    ): JsonResponse {
         $question = $request->prompt;
         $qa = QuestionAnsweringFactory::create(
             $request->embeddingsModel,
@@ -51,16 +53,16 @@ class CompletionController extends AbstractController
 
         return $this->json([
             'response' => $response,
-            'created_at' => (new \DateTimeImmutable())->format('U'),
+            'createdAt' => (new \DateTimeImmutable())->format('U'),
             'benchmark' => [
                 'duration' => $benchmark->getDuration(),
                 'memory' => $benchmark->getMemory(),
             ],
-            'generative_model' => [
+            'generativeModel' => [
                 'provider' => $request->generativeModel->provider->value,
                 'model' => $request->generativeModel->model,
             ],
-            'embeddings_model' => [
+            'embeddingsModel' => [
                 'provider' => $request->embeddingsModel->provider->value,
                 'model' => $request->embeddingsModel->model,
             ],

@@ -30,10 +30,47 @@ php bin/console doctrine:migration:migrate
 php bin/console doctrine:query:sql "$(< dataset/document.sql)"
 ```
 
-## Completion
-You can choose to generate text with or without context by adjusting query string parameters. 
-The parameters `provider`, `model`, and `context` control this functionality. To enable the use of context, set `context=1`; to disable it, set `context=0`.
+## Embeddings
 
+**Request**
+```shell
+curl --request POST \
+  --url http://localhost:8080/v1/embeddings \
+  --header 'Content-Type: application/json' \
+  --data '{
+	"text": "parle moi de la loi du numérique en droit congolais",
+	"dimension": 512,
+	"embeddingsModel": {
+		"provider": "mistral",
+		"model": "mistral-embed"
+	}
+}
+'
+```
+
+**Response**
+```json
+{
+  "embeddings": [
+    -0.027252197265625,
+    0.001789093017578125,
+    0.0261383056640625,
+    -0.0160980224609375
+  ],
+  "createdAt": "1731197428",
+  "benchmark": {
+    "duration": 1602.6,
+    "memory": 10485760
+  },
+  "embeddingsModel": {
+    "provider": "mistral",
+    "model": "mistral-embed"
+  }
+}
+```
+
+## Completion
+You can choose to generate text with or without context.
 The list of available models and providers is configurable and can be extended to meet specific requirements.
 
 | provider | Model                           |
@@ -46,24 +83,40 @@ The list of available models and providers is configurable and can be extended t
 **Request**
 ```shell
 curl --request POST \
-  --url 'http://localhost:8080/api/generate?provider=google&model=gemini-1.5-pro&context=0' \
+  --url http://localhost:8080/v1/chats/completion \
   --header 'Content-Type: application/json' \
-  --data '{ "prompt": "why the sky is" }
+  --data '{
+	"prompt": "parle moi de la loi du numérique en droit congolais",
+	"embeddingsModel": {
+		"provider": "mistral",
+		"model": "mistral-embed"
+	},
+	"generativeModel": {
+		"provider": "google",
+		"model": "gemini-1.5-pro"
+	},
+	"useContext": true
+}
 '
 ```
 
 **Response**
 ```json
 {
-	"response": "response",
-	"model": "gemini-1.5-pro",
-	"provider": "google",
-	"created_at": "1731094302",
-	"benchmark": {
-		"duration": 10763.2,
-		"memory": 10485760
-	},
-	"done": true
+  "response": "La loi sur les transactions électroniques...",
+  "createdAt": "1731196808",
+  "benchmark": {
+    "duration": 10288.7,
+    "memory": 10485760
+  },
+  "generativeModel": {
+    "provider": "google",
+    "model": "gemini-1.5-pro"
+  },
+  "embeddingsModel": {
+    "provider": "mistral",
+    "model": "mistral-embed"
+  }
 }
 ```
 

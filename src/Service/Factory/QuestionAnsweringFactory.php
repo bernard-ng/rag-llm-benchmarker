@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Factory;
 
-use App\Request\Configuration;
+use App\Request\Config;
 use App\Service\Chat;
 use App\Service\EmbeddingGenerator;
 use App\Service\QuestionAnswering;
@@ -19,8 +19,8 @@ use Psr\Log\LoggerInterface;
 abstract class QuestionAnsweringFactory
 {
     public static function create(
-        Configuration $embeddingsModel,
-        Configuration $generativeModel,
+        Config $embeddingsModel,
+        Config $generativeModel,
         VectorStoreBase $vectorStore,
         LoggerInterface $logger
     ) {
